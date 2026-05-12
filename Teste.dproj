@@ -125,6 +125,8 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="CustomWindow.pas"/>
+        <DCCReference Include="WrapperWIN32.pas"/>
+        <DCCReference Include="WindowData.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
