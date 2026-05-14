@@ -5,6 +5,7 @@ interface
 uses
   Winapi.Windows,
   Winapi.ActiveX,
+  Winapi.d2d1,
   System.UITypes, WrapperWIN32, WindowData;
 
 Type
@@ -20,6 +21,8 @@ Type
     FStateWindow : PTWindowData;
     procedure CreateWindow;
     procedure LeftClick(Sender : TObject);
+    procedure Paint(AHandler : HWND);
+    procedure PaintGradient(AHandler : HWND);
   public
     constructor Create(const AClassName, AWindowName : String);
     destructor Destroy;override;
@@ -42,13 +45,15 @@ begin
 end;
 
 procedure TCustomWindow.CreateWindow;
+var FInst : TWindowData;
 begin
   if FHandleWindow <> 0 then
     Exit;
 
   ZeroMemory(@Fwc, SizeOf(Fwc));
 
-  FStateWindow := New(PTWindowData);
+  FInst := TWindowData.Create;
+  FStateWindow := PTWindowData(FInst);
 
   if FStateWindow = nil then
     Exit;
@@ -82,6 +87,9 @@ begin
   end;
 
   TWindowData(FStateWindow).OnMouseLeftClick := LeftClick;
+//  TWindowData(FStateWindow).OnPaint := Paint;
+  TWindowData(FStateWindow).OnPaint := PaintGradient;
+  TWindowData(FStateWindow).Color := RGB(255,255,255);
 end;
 
 destructor TCustomWindow.Destroy;
@@ -92,8 +100,93 @@ end;
 
 procedure TCustomWindow.LeftClick(Sender: TObject);
 begin
-  SetColor(RGB(Random(256),Random(256),Random(256)));
-  RePaint;
+  
+end;
+
+procedure TCustomWindow.Paint(AHandler: HWND);
+var lrect : TRect;
+    lAppState : TWindowData;
+    lhr : HRESULT;
+    lbrush : ID2D1SolidColorBrush;
+    lbrushProp : TD2D1BrushProperties;
+begin
+  GetClientRect(AHandler,lrect);
+  lAppState := GetAppState(AHandler);
+
+  lbrushProp := Default(TD2D1BrushProperties);
+  lbrushProp.opacity := 1.0;
+
+  lhr := lAppState.RenderTarget.CreateSolidColorBrush(
+    D2D1ColorF(1, 0, 0, 1.0),
+    @lbrushProp,
+  lbrush);
+
+  lAppState.RenderTarget.BeginDraw;
+  lAppState.RenderTarget.Clear(D2D1ColorF(1.0, 1.0, 1.0, 1.0));
+  lAppState.RenderTarget.DrawRectangle(
+    D2D1RectF(
+      lrect.left + 100.0,
+      lrect.top + 100.0,
+      lrect.right - 100.0,
+      lrect.bottom - 100.0),
+      lbrush,
+      1,
+      nil);
+  lhr := lAppState.RenderTarget.EndDraw;
+end;
+
+procedure TCustomWindow.PaintGradient(AHandler: HWND);
+var
+  lhr : HRESULT;
+  lAppState : TWindowData;
+  lbrushStop : array [0 ..1 ] of TD2D1GradientStop;
+  lGradientStops : ID2D1GradientStopCollection;
+  lbrushcollprop : D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES;
+  lRect : TRect;
+  lbrushProp : TD2D1BrushProperties;
+  lbrushgrad : ID2D1LinearGradientBrush;
+  lD2DRect: TD2D1RectF;
+begin
+  lAppState := GetAppState(AHandler);
+  GetClientRect(AHandler,lrect);
+
+  lD2DRect := D2D1RectF(lrect.left + 100, lrect.top + 100, lrect.right - 100, lrect.bottom - 100);
+
+  lbrushProp := Default(TD2D1BrushProperties);
+  lbrushProp.opacity := 1.0;
+
+  lbrushStop[0].color := D2D1ColorF(1,0,0,1);
+  lbrushStop[0].position := 0;
+  lbrushStop[1].color := D2D1ColorF(0,0,1,1);
+  lbrushStop[1].position := 1;
+
+  // 1. Criar a coleção de stops
+  lhr := lAppState.RenderTarget.CreateGradientStopCollection(
+    @lbrushStop[0],
+    Length(lbrushStop),
+    D2D1_GAMMA_1_0,
+    D2D1_EXTEND_MODE_CLAMP,
+    lGradientStops);
+
+  // 2. Definir os pontos do gradiente
+  lbrushcollprop := Default(D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES);
+  lbrushcollprop.startPoint := D2D1PointF(lD2DRect.left, lD2DRect.top);
+  lbrushcollprop.endPoint   := D2D1PointF(lD2DRect.right, lD2DRect.bottom);
+
+  // 3. Criar o brush com a coleção
+  lhr := lAppState.RenderTarget.CreateLinearGradientBrush(
+    lbrushcollprop,
+    @lbrushProp,
+    lGradientStops,
+    lbrushgrad);
+
+  // 4. Desenhar
+  lAppState.RenderTarget.BeginDraw;
+  lAppState.RenderTarget.Clear(D2D1ColorF(1.0, 1.0, 1.0, 1.0));
+  lAppState.RenderTarget.FillRectangle(
+    lD2DRect,
+    lbrushgrad);
+  lhr := lAppState.RenderTarget.EndDraw;
 end;
 
 procedure TCustomWindow.RePaint;

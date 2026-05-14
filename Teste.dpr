@@ -1,6 +1,6 @@
 program Teste;
 
-{$APPTYPE CONSOLE}
+{$APPTYPE GUI}
 
 {$R *.res}
 
@@ -17,8 +17,6 @@ begin
   try
     fm := TCustomWindow.Create('JANELA', 'JANELA');
     try
-//      fm.Caption := 'JANELA';
-//      fm.Color := RGB(0,0,0);
       fm.Show;
     finally
       fm.Free;
