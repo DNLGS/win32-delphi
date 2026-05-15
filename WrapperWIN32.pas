@@ -15,10 +15,56 @@ const
   WM_CLOSE = $0010;
   WM_NCCREATE = $0081;
   WM_CREATE = $0001;
+  WM_SIZE = $0005;
 
 function WindowProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+function LoadWGL(ANameFunc : PAnsiChar) : Pointer;
 
 implementation
+
+function LoadWGL(ANameFunc : PAnsiChar) : Pointer;
+var
+  ModuloOpenGL: HMODULE;
+begin
+  Result := GetProcAddress(ModuloOpenGL, ANameFunc);
+
+  if Result = nil then
+  begin
+    ModuloOpenGL := GetModuleHandle('opengl32.dll');
+    if ModuloOpenGL <> 0 then
+      Result := GetProcAddress(ModuloOpenGL, ANameFunc);
+  end;
+end;
+
+function CreateRenderTarget(const AHandler: HWND; const AAppState : TWindowData) : ID2D1HwndRenderTarget;
+var
+  lhr : HRESULT;
+  lrc : TRect;
+  lrt : ID2D1HwndRenderTarget;
+begin
+  Result := nil;
+  GetClientRect(AHandler, lrc);
+
+  lhr := AAppState.PD2D1Factory.CreateHwndRenderTarget(
+    D2D1RenderTargetProperties(),
+    D2D1HwndRenderTargetProperties(
+      AHandler,
+      D2D1SizeU(lrc.right - lrc.left, lrc.bottom - lrc.top)),
+    lrt);
+  Result := lrt;
+end;
+
+function CreateD2DFactory : ID2D1Factory;
+var
+  lhr : HRESULT;
+begin
+  Result := nil;
+  lhr := D2D1CreateFactory(
+    D2D1_FACTORY_TYPE_SINGLE_THREADED,
+    ID2D1Factory,
+    nil,
+    Result);
+end;
 
 function WindowProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM;
   lParam: LPARAM): LRESULT;
@@ -27,12 +73,6 @@ var
   pState : PTWindowData;
   lAppState : TWindowData;
   ps : PAINTSTRUCT;
-  lhdc : HDC;
-  lbrush : HBRUSH;
-  pD2DFactory : ID2D1Factory;
-  lrt : ID2D1HwndRenderTarget;
-  lhr : HRESULT;
-  lrc : TRect;
 begin
   case uMsg of
     WM_NCCREATE:
@@ -40,28 +80,26 @@ begin
       pCreate := PCREATESTRUCT(lParam);
       pState := PTWindowData(pCreate.lpCreateParams);
       SetWindowLongPtr(hwnd, GWLP_USERDATA, LONG_PTR(pState));
-      Exit(DefWindowProc(hwnd, uMsg, wParam, lParam)); // importante retornar TRUE
+      Exit(DefWindowProc(hwnd, uMsg, wParam, lParam));
     end;
 
     WM_CREATE:
     begin
-      pState := PTWindowData(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-      pD2DFactory := nil;
-      lhr := D2D1CreateFactory(
-        D2D1_FACTORY_TYPE_SINGLE_THREADED,
-        ID2D1Factory,
-        nil,
-        pD2DFactory);
-      TWindowData(pState).PD2D1Factory := pD2DFactory;
-      GetClientRect(hwnd, lrc);
-      lhr := TWindowData(pState).PD2D1Factory.CreateHwndRenderTarget(
-        D2D1RenderTargetProperties(),
-        D2D1HwndRenderTargetProperties(
-          hwnd,
-          D2D1SizeU(lrc.right - lrc.left, lrc.bottom - lrc.top)),
-        lrt);
-      TWindowData(pState).RenderTarget := lrt;
+      lAppState := GetAppState(hwnd);
+      lAppState.PD2D1Factory := CreateD2DFactory;
+//      lAppState.RenderTarget := CreateRenderTarget(hwnd, lAppState);
+
+      if Assigned(lAppState.OnCreate) then
+        lAppState.OnCreate(hwnd);
+
       Exit(0);
+    end;
+    WM_SIZE:
+    begin
+      lAppState := GetAppState(hwnd);
+      if Assigned(lAppState.OnSize) then
+        lAppState.OnSize(hwnd,LOWORD(lParam), HiWord(lParam));
+
     end;
     WM_CLOSE :
     begin
@@ -81,18 +119,14 @@ begin
     WM_DESTROY:
     begin
       pState := PTWindowData(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-      if Assigned(TWindowData(pState).RenderTarget) then
-        TWindowData(pState).RenderTarget := nil;
-
-      if Assigned(TWindowData(pState).PD2D1Factory) then
-        TWindowData(pState).PD2D1Factory := nil;
-
       if Assigned(pState) then
+      begin
+        TWindowData(pState).RenderTarget := nil;
+        TWindowData(pState).PD2D1Factory := nil;
         Dispose(pState);
-
+      end;
       PostQuitMessage(0);
-      Exit(DefWindowProc(hwnd, uMsg, wParam, lParam));
+      Exit(0);
     end;
 
     WM_PAINT:

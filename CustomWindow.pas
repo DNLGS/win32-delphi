@@ -6,12 +6,15 @@ uses
   Winapi.Windows,
   Winapi.ActiveX,
   Winapi.d2d1,
-  System.UITypes, WrapperWIN32, WindowData;
+//  Winapi.WinGdi,
+  System.UITypes, WrapperWIN32, WindowData, glad_gl;
 
 Type
   TCustomWindow = class
   private
     Fwc : WNDCLASS;
+    FDC : HDC;
+    FContext : HGLRC;
     FHandleWindow  : HWND;
     FMsgWindow : TMsg;
     FCaption : String;
@@ -45,7 +48,10 @@ begin
 end;
 
 procedure TCustomWindow.CreateWindow;
-var FInst : TWindowData;
+var
+  FInst : TWindowData;
+  pfd : PIXELFORMATDESCRIPTOR;
+  PixelFormat : Integer;
 begin
   if FHandleWindow <> 0 then
     Exit;
@@ -86,9 +92,33 @@ begin
     Exit;
   end;
 
-  TWindowData(FStateWindow).OnMouseLeftClick := LeftClick;
+  FDC := GetDC(FHandleWindow);
+
+  ZeroMemory(@pfd, SizeOf(pfd));
+  pfd.nSize      := SizeOf(pfd);
+  pfd.nVersion   := 1;
+  pfd.dwFlags    := PFD_DRAW_TO_WINDOW or PFD_SUPPORT_OPENGL or PFD_DOUBLEBUFFER;
+  pfd.iPixelType := PFD_TYPE_RGBA;
+  pfd.cColorBits := 32;
+  pfd.cDepthBits := 24;
+  pfd.iLayerType := PFD_MAIN_PLANE;
+
+  PixelFormat := ChoosePixelFormat(FDC, @pfd);
+  SetPixelFormat(FDC, PixelFormat, @pfd);
+
+  FContext := wglCreateContext(FDC);
+  if not wglMakeCurrent(FDC, FContext) then
+    WriteLn('Erro');
+
+  if not gladLoadGL(@loadWGL) then
+  begin
+    WriteLn('Falha ao inicializar o GLAD!');
+    Halt(1);
+  end;
+
+//  TWindowData(FStateWindow).OnMouseLeftClick := LeftClick;
 //  TWindowData(FStateWindow).OnPaint := Paint;
-  TWindowData(FStateWindow).OnPaint := PaintGradient;
+//  TWindowData(FStateWindow).OnPaint := PaintGradient;
   TWindowData(FStateWindow).Color := RGB(255,255,255);
 end;
 

@@ -9,6 +9,8 @@ uses
 type
   TOnMouseLeftClick = procedure(Sender: TObject) of object;
   TOnPaint = procedure(Handler : HWND) of object;
+  TOnCreate = procedure(Handler : HWND) of object;
+  TOnSize = procedure(Handler : HWND; width, heigth : Integer) of object;
 
   TWindowData = class
     private
@@ -20,6 +22,8 @@ type
       FPRenderTarget : ID2D1HwndRenderTarget;
       FOnMouseLeftClick : TOnMouseLeftClick;
       FOnPaint : TOnPaint;
+      FOnCreate : TOnCreate;
+      FOnSize : TOnSize;
     public
       property Width: Integer read FWidth write FWidth;
       property Heigth: Integer read FHeigth write FHeigth;
@@ -29,6 +33,8 @@ type
       property RenderTarget: ID2D1HwndRenderTarget read FPRenderTarget write FPRenderTarget;
       property OnMouseLeftClick: TOnMouseLeftClick read FOnMouseLeftClick write FOnMouseLeftClick;
       property OnPaint: TOnPaint read FOnPaint write FOnPaint;
+      property OnCreate: TOnCreate read FOnCreate write FOnCreate;
+      property OnSize: TOnSize read FOnSize write FOnSize;
       constructor Create;
   end;
 
