@@ -9,7 +9,8 @@ uses
   WinAPI.Windows,
   CustomWindow in 'CustomWindow.pas',
   WrapperWIN32 in 'WrapperWIN32.pas',
-  WindowData in 'WindowData.pas';
+  WindowData in 'WindowData.pas',
+  glad_gl in 'dependencies\glad_gl.pas';
 
 var
   fm : TCustomWindow;

@@ -16,6 +16,7 @@ const
   WM_NCCREATE = $0081;
   WM_CREATE = $0001;
   WM_SIZE = $0005;
+  WM_QUIT = $0012;
 
 function WindowProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 function LoadWGL(ANameFunc : PAnsiChar) : Pointer;

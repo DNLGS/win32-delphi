@@ -26,6 +26,7 @@ Type
     procedure LeftClick(Sender : TObject);
     procedure Paint(AHandler : HWND);
     procedure PaintGradient(AHandler : HWND);
+    procedure sizeCallback(AHandler : HWND; AWidth, AHeigth : Integer);
   public
     constructor Create(const AClassName, AWindowName : String);
     destructor Destroy;override;
@@ -92,6 +93,9 @@ begin
     Exit;
   end;
 
+
+  // Sim eu sei que a parte do render tem que ser separado da janela, mas por enquanto
+  // eu to testando, se mais pra frente eu finalizar isso aqui, eu organizo melhor
   FDC := GetDC(FHandleWindow);
 
   ZeroMemory(@pfd, SizeOf(pfd));
@@ -116,9 +120,12 @@ begin
     Halt(1);
   end;
 
+  glViewport(0,0,FWidth, FHeigth);
+
 //  TWindowData(FStateWindow).OnMouseLeftClick := LeftClick;
 //  TWindowData(FStateWindow).OnPaint := Paint;
 //  TWindowData(FStateWindow).OnPaint := PaintGradient;
+  TWindowData(FStateWindow).OnSize := sizeCallback;
   TWindowData(FStateWindow).Color := RGB(255,255,255);
 end;
 
@@ -230,18 +237,36 @@ begin
 end;
 
 procedure TCustomWindow.Show;
+var
+  Executando: Boolean;
 begin
   CreateWindow;
   ShowWindow(FHandleWindow, CmdShow);
   UpdateWindow(FHandleWindow);
 
-  while GetMessage(FMsgWindow, 0, 0, 0) do
+  Executando := True;
+  while Executando do
   begin
-    TranslateMessage(FMsgWindow);  // Traduz teclas de aceleração
-    DispatchMessage(FMsgWindow);   // Envia a mensagem para a WindowProc
+    while PeekMessage(FMsgWindow, 0, 0, 0, PM_REMOVE) do
+    begin
+      if FMsgWindow.message = WM_QUIT then
+        Executando := False
+      else
+      begin
+        TranslateMessage(FMsgWindow);
+        DispatchMessage(FMsgWindow);
+      end;
+
+      glClearColor(1, 0.3, 0.3, 1.0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      SwapBuffers(FDC);
+    end;
   end;
 end;
 
-
+procedure TCustomWindow.sizeCallback(AHandler: HWND; AWidth, AHeigth: Integer);
+begin
+  glViewport(0,0,AWidth, AHeigth);
+end;
 
 end.
