@@ -67,7 +67,7 @@ begin
 
   Fwc.lpfnWndProc   := @WindowProc;
   Fwc.hInstance     := hInstance;
-  Fwc.lpszClassName := PWCHAR(FCaption);
+  Fwc.lpszClassName := PWCHAR(FClassName);
   Fwc.hCursor       := LoadCursor(0, IDC_ARROW);     // Cursor padrão
 
   if RegisterClass(Fwc) = 0 then

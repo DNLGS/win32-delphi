@@ -7,18 +7,27 @@ program Teste;
 uses
   System.SysUtils,
   WinAPI.Windows,
-  CustomWindow in 'CustomWindow.pas',
-  WrapperWIN32 in 'WrapperWIN32.pas',
-  WindowData in 'WindowData.pas',
-  glad_gl in 'dependencies\glad_gl.pas';
+  glad_gl in 'dependencies\glad_gl.pas',
+  window_internal in 'src\window\window_internal.pas',
+  window_callback in 'src\window\window_callback.pas',
+  window_state in 'src\window\window_state.pas',
+  window_user in 'src\window\window_user.pas';
 
 var
-  fm : TCustomWindow;
+  fm : TWindowUser;
 begin
   try
-    fm := TCustomWindow.Create('JANELA', 'JANELA');
+    fm := TWindowUser.Create;
     try
-      fm.Show;
+      fm.MainWindow := True;
+      fm.Title := 'JANELA';
+      fm.ClassName := 'JANELATESTE';
+      fm.X := 0;
+      fm.Y := 0;
+      fm.Width := 800;
+      fm.Height := 800;
+      fm.Cursor := LoadCursor(0, IDC_ARROW);
+      fm.ShowWindowSinc(1);
     finally
       fm.Free;
     end;

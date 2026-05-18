@@ -124,10 +124,11 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="CustomWindow.pas"/>
-        <DCCReference Include="WrapperWIN32.pas"/>
-        <DCCReference Include="WindowData.pas"/>
         <DCCReference Include="dependencies\glad_gl.pas"/>
+        <DCCReference Include="src\window\window_internal.pas"/>
+        <DCCReference Include="src\window\window_callback.pas"/>
+        <DCCReference Include="src\window\window_state.pas"/>
+        <DCCReference Include="src\window\window_user.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

@@ -68,7 +68,7 @@ begin
 end;
 
 function WindowProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM;
-  lParam: LPARAM): LRESULT;
+  lParam: LPARAM): LRESULT; stdcall;
 var
   pCreate : PCREATESTRUCT;
   pState : PTWindowData;
